@@ -46,7 +46,33 @@ module ActionController
       # encoded as ASCII-8BIT. This is useful in the case where an application
       # must handle data but encoding of the data is unknown, like file system data.
       def skip_parameter_encoding(action)
-        @_parameter_encodings[action.to_s] = Hash.new { Encoding::ASCII_8BIT }
+        default_parameter_encoding(action, Encoding::ASCII_8BIT)
+      end
+
+      # Specify that a given action's parameters should all be
+      # encoded as the encoding of the second argument.
+      #
+      # For example, a controller would use it like this:
+      #
+      #   class SomeIncomingWebhookController < ActionController::Base
+      #     default_parameter_encoding :call, Encoding::SHIFT_JIS
+      #
+      #     def call
+      #       params.transform_values! {|param| param.encode(Encoding::UTF_8)}
+      #       @record = SomeRecord.find_or_initialize_by(external_id: params[:id])
+      #
+      #       @record.update!(call_params)
+      #     end
+      #
+      #     def call_params
+      #       params.permit(:name_kanji, :name_pronunciation, :description, :some_attribute_includes_kanji)
+      #     end
+      #   end
+      #
+      # Sometime, rails application implements incoming webhook endpoint from external system.
+      # This method is useful when the external system speaks non UTF-8 encoding.
+      def default_parameter_encoding(action, encoding)
+        @_parameter_encodings[action.to_s] = Hash.new { encoding }
       end
 
       # Specify the encoding for a parameter on an action.
